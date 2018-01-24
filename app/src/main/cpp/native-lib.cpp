@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <jni.h>
 #include <assert.h>
+#include <iostream>
 
 //extern "C"
 //JNIEXPORT jstring JNICALL
@@ -18,13 +19,35 @@ static const char *jniClassName = "com/mycompany/computetools/jniapplication/Mai
 
 /*********     动态注册方法 dynamicRegFromJni   ***********/
 
-static jstring nativeDynamicRegFromJni(JNIEnv *env, jobject obj) {
-    return env->NewStringUTF("动态注册调用成功");
+static jstring nativeDynamicRegFromJni(JNIEnv *env, jobject obj, jstring json) {
+    const char* str;
+    str = env->GetStringUTFChars(json, false);
+    if(str == NULL) {
+        return NULL;
+    }
+
+    std::cout << str  << std::endl;
+
+    //释放资源
+    env->ReleaseStringUTFChars(json, str);
+
+    // 返回一个字符串
+    char* tmpstr = "动态注册调用成功";
+    jstring rtstr = env->NewStringUTF(tmpstr);
+    return rtstr;
+//    return env->NewStringUTF("动态注册调用成功");
 }
 
 
+//(Ljava/lang/String;Ljava/lang/String;)V"
+//
+//实际上这些字符是与函数的参数类型一一对应的。
+//
+//"()" 中的字符表示参数，后面的则代表返回值。例如"()V" 就表示void Func();
+//
+//"(II)V" 表示 void Func(int, int);
 static JNINativeMethod methods[] = {
-        {"dynamicRegFromJni", "()Ljava/lang/String;", (void *) nativeDynamicRegFromJni},
+        {"dynamicRegFromJni", "(Ljava/lang/String;)Ljava/lang/String;", (void *) nativeDynamicRegFromJni},
 };
 
 static int registerNatives(JNIEnv *env) {

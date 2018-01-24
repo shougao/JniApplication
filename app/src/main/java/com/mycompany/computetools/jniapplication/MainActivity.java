@@ -12,7 +12,7 @@ public class MainActivity extends Activity {
         System.loadLibrary("native-lib");
     }
 
-    public native String dynamicRegFromJni();     //动态方法注册
+    public native String dynamicRegFromJni(String json);     //动态方法注册
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,8 +21,8 @@ public class MainActivity extends Activity {
 
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.sample_text);
-        tv.setText(dynamicRegFromJni());
-        Toast.makeText(this, dynamicRegFromJni(), Toast.LENGTH_SHORT).show();
+        tv.setText(dynamicRegFromJni("json"));
+        Toast.makeText(this, dynamicRegFromJni("json"), Toast.LENGTH_SHORT).show();
     }
 
 }
