@@ -13,6 +13,12 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
@@ -21,6 +27,7 @@ public class MainActivity extends Activity {
     // ====================network part.
     private static final String ENDPOINT = "https://kylewbanks.com/rest/posts.json";
     private RequestQueue requestQueue;
+    private Gson gson;
 
     // ====================jni part
     // Used to load the 'native-lib' library on application startup.
@@ -41,6 +48,9 @@ public class MainActivity extends Activity {
         Toast.makeText(this, dynamicRegFromJni("json"), Toast.LENGTH_SHORT).show();
 
         //=======for volley and gson.
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.setDateFormat("M/d/yy hh:mm a");
+        gson = gsonBuilder.create();
         requestQueue = Volley.newRequestQueue(getApplicationContext());
         fetchPosts();
     }
@@ -53,7 +63,13 @@ public class MainActivity extends Activity {
     private Response.Listener<String> onPostLoaded = new Response.Listener<String>() {
         @Override
         public void onResponse(String response) {
-            Log.d(TAG, response.toString());
+            List<Post> posts = Arrays.asList(gson.fromJson(response, Post[].class));
+
+            Iterator<Post> iterator = posts.iterator();
+            while (iterator.hasNext()) {
+                Post post = iterator.next();
+                Log.d(TAG, "ID:" + post.ID + ", TITLE:" + post.title);
+            }
         }
     };
 
