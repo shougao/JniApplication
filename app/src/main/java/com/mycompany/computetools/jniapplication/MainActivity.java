@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
     // ====================network part.
     private static final String ENDPOINT = "https://kylewbanks.com/rest/posts.json";
     private RequestQueue requestQueue;
-    private Gson gson;
+    private Gson mGson;
 
     // ====================jni part
     // Used to load the 'native-lib' library on application startup.
@@ -53,18 +53,13 @@ public class MainActivity extends Activity {
         secondEditText = (EditText) findViewById(R.id.secondeditText);
         resultView = (TextView) findViewById(R.id.result_text);
 
-
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.setDateFormat("M/d/yy hh:mm a");
+        mGson = gsonBuilder.create();
         // Example of a call to a native method
         TextView tv = (TextView) findViewById(R.id.result_text);
 //        tv.setText(dynamicRegFromJni("json"));
 //        Toast.makeText(this, dynamicRegFromJni("json"), Toast.LENGTH_SHORT).show();
-
-        //=======for volley and gson.
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.setDateFormat("M/d/yy hh:mm a");
-        gson = gsonBuilder.create();
-        requestQueue = Volley.newRequestQueue(getApplicationContext());
-        fetchPosts();
     }
 
     private void fetchPosts() {
@@ -75,13 +70,16 @@ public class MainActivity extends Activity {
     private Response.Listener<String> onPostLoaded = new Response.Listener<String>() {
         @Override
         public void onResponse(String response) {
-            List<Post> posts = Arrays.asList(gson.fromJson(response, Post[].class));
+            List<Post> posts = Arrays.asList(mGson.fromJson(response, Post[].class));
 
             Iterator<Post> iterator = posts.iterator();
+            int itemNumbers = 0;
             while (iterator.hasNext()) {
                 Post post = iterator.next();
-                Log.d(TAG, "ID:" + post.ID + ", TITLE:" + post.title);
+//                Log.d(TAG, "ID:" + post.ID + ", TITLE:" + post.title);
+                itemNumbers++;
             }
+            Toast.makeText(getApplication(), "on line Data Parse successful.number= " + itemNumbers, Toast.LENGTH_LONG).show();
         }
     };
 
@@ -111,18 +109,23 @@ public class MainActivity extends Activity {
         String jsonString = "{\"command\":\"sub\",\"parameter1\":7,\"parameter2\":2,\"result\":5}";
         NativeMethod method2 = gson.fromJson(jsonString, NativeMethod.class);
         Log.d(TAG, "command = " + method2.command);
+
+
+        //=======parse online json data, using volley and gson.
+        requestQueue = Volley.newRequestQueue(getApplicationContext());
+        fetchPosts();
     }
 
     public void addEvent(View view) {
         int firstNumber = Integer.parseInt(firstEditText.getEditableText().toString());
         int secondNumber = Integer.parseInt(secondEditText.getEditableText().toString());
         NativeMethod method = new NativeMethod("add", firstNumber, secondNumber);
-        String jsongObj = gson.toJson(method);
+        String jsongObj = mGson.toJson(method);
         String result = dynamicRegFromJni(jsongObj);
         Log.d(TAG, "result string = " + result);
 
         resultView.setText("result = " + result);
-        NativeMethod m = gson.fromJson(result, NativeMethod.class);
+        NativeMethod m = mGson.fromJson(result, NativeMethod.class);
         Log.d(TAG, "command = " + m.command + ", result=" + m.result);
     }
 
@@ -130,12 +133,12 @@ public class MainActivity extends Activity {
         int firstNumber = Integer.parseInt(firstEditText.getEditableText().toString());
         int secondNumber = Integer.parseInt(secondEditText.getEditableText().toString());
         NativeMethod method = new NativeMethod("multi", firstNumber, secondNumber);
-        String jsongObj = gson.toJson(method);
+        String jsongObj = mGson.toJson(method);
         String result = dynamicRegFromJni(jsongObj);
         Log.d(TAG, "result string = " + result);
         resultView.setText("result = " + result);
 
-        NativeMethod m = gson.fromJson(result, NativeMethod.class);
+        NativeMethod m = mGson.fromJson(result, NativeMethod.class);
         Log.d(TAG, "command = " + m.command + ", result=" + m.result);
     }
 
@@ -143,12 +146,12 @@ public class MainActivity extends Activity {
         int firstNumber = Integer.parseInt(firstEditText.getEditableText().toString());
         int secondNumber = Integer.parseInt(secondEditText.getEditableText().toString());
         NativeMethod method = new NativeMethod("sub", firstNumber, secondNumber);
-        String jsongObj = gson.toJson(method);
+        String jsongObj = mGson.toJson(method);
         String result = dynamicRegFromJni(jsongObj);
         Log.d(TAG, "result string = " + result);
         resultView.setText("result = " + result);
 
-        NativeMethod m = gson.fromJson(result, NativeMethod.class);
+        NativeMethod m = mGson.fromJson(result, NativeMethod.class);
         Log.d(TAG, "command = " + m.command + ", result=" + m.result);
     }
 }
