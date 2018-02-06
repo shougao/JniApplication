@@ -1,11 +1,16 @@
 package com.mycompany.computetools.jniapplication;
 
 import android.app.Activity;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,13 +23,12 @@ import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.json.JSONObject;
-
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements Handler.Callback {
+
 
     private static final String TAG = MainActivity.class.getSimpleName() + "zqc";
 
@@ -45,13 +49,35 @@ public class MainActivity extends Activity {
 
     public native String dynamicRegFromJni(String json);     //动态方法注册
 
+
+    private static final int CHECK_UPDATE_MESSAGE = 100;
+    private static final long CHECK_UPDATE_INTERVAL_MS = 1000 * 1000 * 10;
+
+    private Handler mUpdater;
+    private HandlerThread mUpdaterThread;
+    private ConnectivityManager mConnectivityManager;
+    private ConnectivityManager.NetworkCallback mNetworkCallback = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(Network network) {
+            if (mUpdater != null) {
+                mUpdater.sendEmptyMessage(CHECK_UPDATE_MESSAGE);
+            }
+        }
+
+        @Override
+        public void onLost(Network network) {
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        firstEditText = (EditText) findViewById(R.id.firseditText);
-        secondEditText = (EditText) findViewById(R.id.secondeditText);
-        resultView = (TextView) findViewById(R.id.result_text);
+        firstEditText = findViewById(R.id.firseditText);
+        secondEditText = findViewById(R.id.secondeditText);
+        resultView = findViewById(R.id.result_text);
+
+        mConnectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.setDateFormat("M/d/yy hh:mm a");
@@ -98,6 +124,12 @@ public class MainActivity extends Activity {
 
     public void gsonTest(View view) {
 
+//        mConnectivityManager.registerDefaultNetworkCallback(mNetworkCallback);
+        mUpdaterThread = new HandlerThread("check update version in background");
+        mUpdaterThread.start();
+        mUpdater = new Handler(mUpdaterThread.getLooper(), this);
+        mUpdater.sendEmptyMessage(CHECK_UPDATE_MESSAGE);
+
         // encode
         Gson gson = new Gson();
         NativeMethod method = new NativeMethod("add", 3, 9);
@@ -114,6 +146,32 @@ public class MainActivity extends Activity {
         //=======parse online json data, using volley and gson.
         requestQueue = Volley.newRequestQueue(getApplicationContext());
         fetchPosts();
+    }
+
+    @Override
+    public boolean handleMessage(Message message) {
+        //网络检查行为。
+
+        synchronized (this) {
+            if (mUpdater != null) {
+                mUpdater.removeMessages(CHECK_UPDATE_MESSAGE);
+                mUpdater.sendEmptyMessageDelayed(CHECK_UPDATE_MESSAGE, CHECK_UPDATE_INTERVAL_MS);//周期检查
+            }
+        }
+        return true;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        // Stop monitoring
+        mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
+
+        mUpdater.removeCallbacksAndMessages(null);
+        mUpdater = null;
+        mUpdaterThread.quit();
+        mUpdaterThread = null;
     }
 
     public void addEvent(View view) {
@@ -153,5 +211,9 @@ public class MainActivity extends Activity {
 
         NativeMethod m = mGson.fromJson(result, NativeMethod.class);
         Log.d(TAG, "command = " + m.command + ", result=" + m.result);
+    }
+
+    public void runOnThread(View view) {
+
     }
 }

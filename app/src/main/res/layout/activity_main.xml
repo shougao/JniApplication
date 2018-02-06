@@ -83,4 +83,13 @@
         android:onClick="subEvent"
         android:text="sub" />
 
+    <Button
+        android:id="@+id/button5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button2"
+        android:layout_alignParentEnd="true"
+        android:onClick="runOnThread"
+        android:text="runOnThread" />
+
 </RelativeLayout>
